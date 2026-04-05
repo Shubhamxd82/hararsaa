@@ -1,7 +1,9 @@
 FROM php:8.2-apache
 
-# Copy project files to Apache root
 COPY . /var/www/html/
 
-# Enable Apache mod_rewrite (optional)
+# Set index.php as default
+RUN echo "DirectoryIndex index.php index.html" > /etc/apache2/conf-available/custom-index.conf \
+    && a2enconf custom-index
+
 RUN a2enmod rewrite
