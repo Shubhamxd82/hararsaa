@@ -118,7 +118,18 @@ $sessions_file = __DIR__ . '/sessions.json';
 $sessions = file_exists($sessions_file) ? json_decode(file_get_contents($sessions_file), true) : [];
 
 $action = $_GET['action'] ?? $_POST['action'] ?? null;
+// Fix frontend action names
+$map = [
+    'attack' => 'bomb',
+    'attack_single' => 'bomb',
+    'attack_multiple' => 'multibomb',
+    'stop' => 'stopall',
+    'get_status' => 'status'
+];
 
+if (isset($map[$action])) {
+    $action = $map[$action];
+}
 function sendRequest($api, $phone) {
     $url = str_replace('{phone}', $phone, $api['url']);
     $ch = curl_init();
